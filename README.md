@@ -1,7 +1,7 @@
 test-jdo
 ========
 
-I have checked that the problem is related with the query cachue (QueryDatastoreCompilationCache) in the core project. The first tenantId setted persist over the later queries.
+I have checked that the problem is related with the query cache (QueryDatastoreCompilationCache) in the core project. The first tenantId setted persist over the later queries.
 The key used for cache the queries not complain the multitenancy.
 
 I have fixed the problem with this code:
