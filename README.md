@@ -1,13 +1,31 @@
 test-jdo
 ========
 
-Template project for any user testcase using JDO.
-To create a DataNucleus test simply fork this project, and add/edit as 
-necessary to add your model and persistence commands. The files that you'll likely need to edit are
+I have checked that the problem is related with the query cachue (QueryDatastoreCompilationCache) in the core project. The first tenantId setted persist over the later queries.
+The key used for cache the queries not complain the multitenancy.
 
-* <a href="https://github.com/datanucleus/test-jdo/tree/master/src/main/java/mydomain/model">src/main/java/mydomain/model/</a>   **[Put your model classes here]**
-* <a href="https://github.com/datanucleus/test-jdo/blob/master/src/main/resources/META-INF/persistence.xml">src/main/resources/META-INF/persistence.xml</a>   **[Put your datastore details in here]**
-* <a href="https://github.com/datanucleus/test-jdo/blob/master/src/test/java/org/datanucleus/test/SimpleTest.java">src/test/java/org/datanucleus/test/SimpleTest.java</a>   **[Edit this if a single-thread test is required]**
-* <a href="https://github.com/datanucleus/test-jdo/blob/master/src/test/java/org/datanucleus/test/MultithreadTest.java">src/test/java/org/datanucleus/test/MultithreadTest.java</a>   **[Edit this if a multi-thread test is required]**
+I have fixed the problem with this code:
 
-To run this, simply type "mvn clean compile test"
+
+diff --git src/main/java/org/datanucleus/store/query/AbstractJDOQLQuery.java src/main/java/org/datanucleus/store/query/AbstractJDOQLQuery.java
+index 9708eedd..b550c5da 100644
+--- src/main/java/org/datanucleus/store/query/AbstractJDOQLQuery.java
++++ src/main/java/org/datanucleus/store/query/AbstractJDOQLQuery.java
+@@ -212,9 +212,13 @@ public abstract class AbstractJDOQLQuery extends AbstractJavaQuery
+         {
+             queryCacheKey += (" " + getFetchPlan().toString());
+         }
+-
+-        return queryCacheKey;
++       
++       String multiTenancyId = ec.getNucleusContext().getMultiTenancyId(ec, getCandidateClassMetaData());
++       if (multiTenancyId != null) {
++           return multiTenancyId + " " + queryCacheKey;
+        }
++        return queryCacheKey;
++    }
+
+     /**
+      * Method to take the defined parameters for the query and form a single string.
+
+
