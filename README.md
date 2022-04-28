@@ -1,31 +1,25 @@
 test-jdo
 ========
 
-I have checked that the problem is related with the query cache (QueryDatastoreCompilationCache) in the core project. The first tenantId setted persist over the later queries.
-The key used for cache the queries not complain the multitenancy.
+Sample project to test the problem with primary keys with the valueStrategy "IdGeneratorStrategy.IDENTITY" with PostgreSQL database and Datanucleus 5.x.
 
-I have fixed the problem with this code:
+The problems is that the SQL query generated adds too many double quotes to the primary key column name at the 'RETURNING "PRIMARY_KEY_COLUMN_NAME"' section.
+
+
+- Steps:
+
+1. To test you need a PostgreSQL server running at 127.0.0.1:5432, create de user "test" with password "test" and a database "test". You must execute this commands as postgres user:
 
 ```
-diff --git src/main/java/org/datanucleus/store/query/AbstractJDOQLQuery.java src/main/java/org/datanucleus/store/query/AbstractJDOQLQuery.java
-index 9708eedd..b550c5da 100644
---- src/main/java/org/datanucleus/store/query/AbstractJDOQLQuery.java
-+++ src/main/java/org/datanucleus/store/query/AbstractJDOQLQuery.java
-@@ -212,9 +212,13 @@ public abstract class AbstractJDOQLQuery extends AbstractJavaQuery
-         {
-             queryCacheKey += (" " + getFetchPlan().toString());
-         }
--
--        return queryCacheKey;
-+       
-+       String multiTenancyId = ec.getNucleusContext().getMultiTenancyId(ec, getCandidateClassMetaData());
-+       if (multiTenancyId != null) {
-+           return multiTenancyId + " " + queryCacheKey;
-        }
-+        return queryCacheKey;
-+    }
-
-     /**
-      * Method to take the defined parameters for the query and form a single string.
+createuser test
+psql -c "ALTER USER test WITH PASSWORD 'test';"
+createdb -O test test
 ```
+
+2. With the database created, execute to check the error:
+
+```
+mvn clean install
+```
+
 
